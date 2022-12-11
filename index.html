@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>HTML Canvas</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div id="header">
+        <button style="margin-left: .5%;" onclick="enumerateTriangulations()">Count Triangulations</button>
+        <button onclick="undo()">Undo</button>
+        <button onclick="redo()">Redo</button>
+        <button id="clearButton" onclick="clearCanvas()">Reset</button>
+    </div>
+    <div id="canvas">
+        <canvas></canvas>
+    </div>
+
+  </body>
+  <script Src="./index.js"></script>
+</html>

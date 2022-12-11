@@ -1,0 +1,20 @@
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#header {
+    padding-top: 0.625%;
+    padding-bottom: 0.625%;
+    background-color: grey;
+}
+
+
+#canvas {
+    height: 1.25%;
+}
+
+#clearButton {
+    float: right;
+    margin-right: .5%;
+}
