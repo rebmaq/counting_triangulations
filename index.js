@@ -12,17 +12,17 @@ const canvas = document.querySelector('canvas');
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
-
 // initiating 2D context on it
 const c = canvas.getContext('2d');
-
-// c.translate(0, canvas.height);
-// c.scale(1, -1);
+c.translate(0, canvas.height);
+c.scale(1, -1)
 
 addEventListener('resize', () => {
     points = [];
     canvas.width = innerWidth;
     canvas.height = innerHeight;
+    c.translate(0, canvas.height);
+    c.scale(1, -1)
 })
 
 addEventListener('click', (event) => {
@@ -34,6 +34,15 @@ addEventListener('click', (event) => {
     }
     poppedPoints = [];
     addPoint(x, y);
+})
+
+addEventListener('keydown', (event) => {
+    if(event.ctrlKey && event.key == 'z') {
+        undo();
+    }
+    else if(event.ctrlKey && event.key == 'y') {
+        redo();
+    }
 })
 
 function renderPoints(){
@@ -61,8 +70,10 @@ function renderPoints(){
 }
 
 function addPoint(x, y){
+    y = -y + canvas.height
     points.push([x, y]);
-    console.log("x: " + x + " y: " + y); 
+    // console.log("x: " + x + " y: " + y); 
+    console.log("x: ", x);
     
     renderPoints();
 }
@@ -93,7 +104,9 @@ function enumerateTriangulations(){
     if(isSimple()){
         console.log("Triangulating.");
 
-        alert(`There are ${triangulate(points[0], points[1])} or ${triangulate(points[1], points[0])} unique triangulations`);
+        // find an edge that is to the left or right of all other points
+        // alert(`There are ${triangulate(points[0], points[1])} or ${triangulate(points[1], points[0])} unique triangulations`);
+        alert(`There are ${triangulate(points[0], points[1])} unique triangulations`);
         return;
     }
     alert("Please enter a valid polygon");
@@ -104,14 +117,16 @@ function triangulate(a, b){
     let sum = 0;
     let leftSet = getLeftSet(a, b)
     // || leftSet.length == 1
-    console.log("a", a);
-    console.log("b", b);
-    console.log(`left set: ${leftSet}`)
+    console.log('---------------------------------------------------')
+    console.log(`a: ${a[0]}, b: ${b[0]}`);
+    console.log(`left set: ${leftSet.map((x) => x[0])}`)
     for(let i = 0; i < leftSet.length; i++){
         let i_a = points.findIndex( (x) => x[0] == a[0] && x[1] == a[1])
         let i_b = points.findIndex( (x) => x[0] == b[0] && x[1] == b[1])
-        console.log("i ", i)
-        console.log(leftSet[i])
+        // console.log("i ", i)
+        console.log("curr left pt", leftSet[i][0])
+        // console.log(Diagonal(a, leftSet[i]))
+        // console.log(Diagonal(a, leftSet[i]))
         // console.log(Diagonal(a, leftSet[i]))
         if((Diagonal(a, leftSet[i]) || points[mod(i_a + 1, points.length)] == leftSet[i] || points[mod(i_a - 1, points.length)] == leftSet[i])
          && (Diagonal(b, leftSet[i]) || points[mod(i_b + 1, points.length)] == leftSet[i] || points[mod(i_b - 1, points.length)] == leftSet[i])){
@@ -119,8 +134,8 @@ function triangulate(a, b){
             sum += triangulate(a, leftSet[i]) * triangulate(leftSet[i], b);
         }
     }
-    if(leftSet.length == 0 || leftSet.length == 1){
-        return 1;
+    if(leftSet.length == 0){
+        sum += 1;
     }
     return sum;
 }
@@ -173,7 +188,7 @@ function Between(a, b, c){
                ((a[0] >= c[0]) && (c[0] >= b[0]));
     else
         return ((a[1] <= c[1]) && (c[1] <= b[1])) ||
-        ((a[1] >= c[1]) && (c[1] >= b[1]));
+               ((a[1] >= c[1]) && (c[1] >= b[1]));
 }
 
 function Intersect(a, b, c, d){
@@ -192,13 +207,13 @@ function Diagonalie(a, b){
     let c, c1;
     let i = 0;
     do{
-        c = points[mod(i,points.length)];
+        c = points[mod(i, points.length)];
         c1 = points[mod((i + 1), points.length)];
-        if(c == a || c1 == a || c == b ||
-            c1 == b){
-                i += 1;
-                continue
-            }
+        // if(c == a || c1 == a || c == b ||
+        //     c1 == b){
+        //         i += 1;
+        //         continue
+        //     }
         // console.log(`i: ${i},\ni + 1: ${i + 1},
         //             \na: ${a},\nb: ${b},\nc: ${c},\nc1: ${c1},\n
         //             intersects? ${Intersect(a, b, c, c1)}`)
@@ -221,18 +236,20 @@ function isSimple(){
         }
     }
     return true;
-}
+} 
 
 function InCone(a, b){
     let a0, a1;
     let i = points.findIndex( (x) => x[0] == a[0] && x[1] == a[1])
-    a0 = points[mod((i + 1), points.length)];
-    // console.log("a0", a0)
-    a1 = points[mod((i - 1), points.length)];
-    // console.log("a1", a1)
-    // console.log(LeftOn(a1, a, a0))
-    if( LeftOn(a1, a, a0)) return Left(b, a, a0) && Left(a, b, a1);
-    return !(LeftOn(b, a, a1) && LeftOn(a, b, a0));
+
+    a1 = points[mod((i + 1), points.length)];
+    console.log("a1", a1[0])
+    a0 = points[mod((i - 1), points.length)];
+    console.log("a0", a0[0])
+
+    // console.log(LeftOn(a, a1, a0))
+    if( LeftOn(a, a1, a0)) return Left(a, b, a0) && Left(b, a, a1); // a is convex
+    return !(LeftOn(a, b, a1) && LeftOn(b, a, a0));
 }
 
 function Diagonal(a, b){
