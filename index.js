@@ -141,6 +141,7 @@ function enumerateTriangulations(){
             }
         }
         alert(`There are ${triangulate(points[mod(i, points.length)], points[mod(i + 1, points.length)])} unique triangulations`);
+        points = points.reverse();
         return;
     }
     alert("Please enter a valid polygon");
