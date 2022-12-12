@@ -76,10 +76,7 @@ function renderPoints(){
 // Add a point to the points array
 function addPoint(x, y){
     y = -y + canvas.height
-    points.push([x, y]);
-    // console.log("x: " + x + " y: " + y); 
-    console.log("x: ", x);
-    
+    points.push([x, y]);    
     renderPoints();
 }
 
@@ -143,7 +140,6 @@ function triangulate(a, b){
     
     // Base case : segment (a, b) is the base of a triangle, or it is an edge on the boundary of the polygon 
     if(leftSet.length == 0 || leftSet.length == 1){
-        console.log(`${a[0]}, ${b[0]} is a base case`);
         return 1;
     }
 
@@ -157,7 +153,6 @@ function triangulate(a, b){
         if((Diagonal(a, leftSet[i]) || points[mod(i_a + 1, points.length)] == leftSet[i] || points[mod(i_a - 1, points.length)] == leftSet[i])
             && (Diagonal(b, leftSet[i]) || points[mod(i_b + 1, points.length)] == leftSet[i] || points[mod(i_b - 1, points.length)] == leftSet[i])){
             baseCase = false;
-            console.log(`${leftSet[i][0]} is a valid pt`);
             sum += triangulate(a, leftSet[i]) * triangulate(leftSet[i], b);
         }
     }
