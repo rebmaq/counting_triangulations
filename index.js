@@ -17,6 +17,7 @@ const c = canvas.getContext('2d');
 c.translate(0, canvas.height);
 c.scale(1, -1)
 
+// Clear and resize the canvas on window resize
 addEventListener('resize', () => {
     points = [];
     canvas.width = innerWidth;
@@ -25,6 +26,7 @@ addEventListener('resize', () => {
     c.scale(1, -1)
 })
 
+// When the canvas is clicked clear the redo stack, and add a point
 addEventListener('click', (event) => {
     let rect = canvas.getBoundingClientRect();
     let x = event.clientX - rect.left;
@@ -36,6 +38,7 @@ addEventListener('click', (event) => {
     addPoint(x, y);
 })
 
+// On Ctrl-z, undo; on ctrl-y, redo
 addEventListener('keydown', (event) => {
     if(event.ctrlKey && event.key == 'z') {
         undo();
@@ -45,6 +48,7 @@ addEventListener('keydown', (event) => {
     }
 })
 
+// Clear the canvas, and display the values in the points array
 function renderPoints(){
     c.clearRect(0, 0, canvas.width, canvas.height);
     if(points.length > 0){
@@ -69,6 +73,7 @@ function renderPoints(){
     }
 }
 
+// Add a point to the points array
 function addPoint(x, y){
     y = -y + canvas.height
     points.push([x, y]);
@@ -78,6 +83,7 @@ function addPoint(x, y){
     renderPoints();
 }
 
+// Remove an added point from the points array
 function undo(){
     if(points.length == 0){
         return;
@@ -86,6 +92,7 @@ function undo(){
     renderPoints();
 }
 
+// Restore the most recently removed point back into the points array
 function redo(){
     if(poppedPoints.length == 0){
         return;
@@ -94,57 +101,80 @@ function redo(){
     renderPoints();
 }
 
+// Clear the points array and the redo stack and clear the canvas
 function clearCanvas(){
     points = []
     poppedPoints = []
     c.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+// Calculate the number of unique triangulations
 function enumerateTriangulations(){
     if(isSimple()){
         console.log("Triangulating.");
 
-        // find an edge that is to the left or right of all other points
-        // alert(`There are ${triangulate(points[0], points[1])} or ${triangulate(points[1], points[0])} unique triangulations`);
-        alert(`There are ${triangulate(points[0], points[1])} unique triangulations`);
+        // find an edge such that it is to the right of all other points
+        let i = 0;
+        for(; i < points.length + 2; i++){
+            let leftSet = getLeftSet(points[mod(i, points.length)], points[mod(i + 1, points.length)]);
+            if(leftSet.length == points.length - 2){
+                break;
+            }
+        }
+        if(i == points.length + 2){ // Traverse the array in counter clockwise order
+            points = points.reverse();
+            i = 0;
+            for(; i < points.length + 2; i++){
+                let leftSet = getLeftSet(points[mod(i, points.length)], points[mod(i + 1, points.length)]);
+                if(leftSet.length == points.length - 2){
+                    break;
+                }
+            }
+        }
+        alert(`There are ${triangulate(points[mod(i, points.length)], points[mod(i + 1, points.length)])} unique triangulations`);
         return;
     }
     alert("Please enter a valid polygon");
 }
 
-// let visited = [];
 function triangulate(a, b){
     let sum = 0;
     let leftSet = getLeftSet(a, b)
-    // || leftSet.length == 1
-    console.log('---------------------------------------------------')
-    console.log(`a: ${a[0]}, b: ${b[0]}`);
-    console.log(`left set: ${leftSet.map((x) => x[0])}`)
+    
+    // Base case : segment (a, b) is the base of a triangle, or it is an edge on the boundary of the polygon 
+    if(leftSet.length == 0 || leftSet.length == 1){
+        console.log(`${a[0]}, ${b[0]} is a base case`);
+        return 1;
+    }
+
+    
+    let baseCase = true;
     for(let i = 0; i < leftSet.length; i++){
-        let i_a = points.findIndex( (x) => x[0] == a[0] && x[1] == a[1])
-        let i_b = points.findIndex( (x) => x[0] == b[0] && x[1] == b[1])
-        // console.log("i ", i)
-        console.log("curr left pt", leftSet[i][0])
-        // console.log(Diagonal(a, leftSet[i]))
-        // console.log(Diagonal(a, leftSet[i]))
-        // console.log(Diagonal(a, leftSet[i]))
+        let i_a = points.findIndex((x) => x[0] == a[0] && x[1] == a[1]) // Get index of point a in the points array
+        let i_b = points.findIndex((x) => x[0] == b[0] && x[1] == b[1]) // Get index of point b in the points array
+        
+        // If (a, leftSet[i]) is a valid internal diagonal or it is an incident edge to point a, and (b, leftSet[i]) is a valid internal diagonal or it is an incident edge to point b
         if((Diagonal(a, leftSet[i]) || points[mod(i_a + 1, points.length)] == leftSet[i] || points[mod(i_a - 1, points.length)] == leftSet[i])
-         && (Diagonal(b, leftSet[i]) || points[mod(i_b + 1, points.length)] == leftSet[i] || points[mod(i_b - 1, points.length)] == leftSet[i])){
-            console.log("bruh")
+            && (Diagonal(b, leftSet[i]) || points[mod(i_b + 1, points.length)] == leftSet[i] || points[mod(i_b - 1, points.length)] == leftSet[i])){
+            baseCase = false;
+            console.log(`${leftSet[i][0]} is a valid pt`);
             sum += triangulate(a, leftSet[i]) * triangulate(leftSet[i], b);
         }
     }
-    if(leftSet.length == 0){
-        sum += 1;
+
+    // Base case : The leftSet is comprised of all non-viable diagonals
+    if(baseCase){
+        sum = 1;
     }
     return sum;
 }
 
+// Get all of the points that are to the left of edge (a, b)
 function getLeftSet(a, b){
     let leftSet = [];
     for(let i = 0; i < points.length; i++){
         if(points[i] == a || points[i] == b) continue;
-        if(Left(a, b, points[i])){
+        if(LeftOn(a, b, points[i])){
             leftSet.push(points[i]);
         }
     }
@@ -209,14 +239,6 @@ function Diagonalie(a, b){
     do{
         c = points[mod(i, points.length)];
         c1 = points[mod((i + 1), points.length)];
-        // if(c == a || c1 == a || c == b ||
-        //     c1 == b){
-        //         i += 1;
-        //         continue
-        //     }
-        // console.log(`i: ${i},\ni + 1: ${i + 1},
-        //             \na: ${a},\nb: ${b},\nc: ${c},\nc1: ${c1},\n
-        //             intersects? ${Intersect(a, b, c, c1)}`)
         if( c != a && c1 != a && c != b &&
             c1 != b && Intersect(a, b, c, c1)){
                 return false;
@@ -226,6 +248,7 @@ function Diagonalie(a, b){
     return true;
 }
 
+// Returns whether the points array represents a simple polygon
 function isSimple(){
     if(points.length < 3){
         return false;
@@ -240,20 +263,15 @@ function isSimple(){
 
 function InCone(a, b){
     let a0, a1;
-    let i = points.findIndex( (x) => x[0] == a[0] && x[1] == a[1])
+    let i = points.findIndex((x) => x[0] == a[0] && x[1] == a[1])
 
     a1 = points[mod((i + 1), points.length)];
-    console.log("a1", a1[0])
     a0 = points[mod((i - 1), points.length)];
-    console.log("a0", a0[0])
 
-    // console.log(LeftOn(a, a1, a0))
     if( LeftOn(a, a1, a0)) return Left(a, b, a0) && Left(b, a, a1); // a is convex
     return !(LeftOn(a, b, a1) && LeftOn(b, a, a0));
 }
 
-function Diagonal(a, b){
-    console.log("incone", InCone(b,a))
-    
+function Diagonal(a, b){  
     return InCone(a, b) && Diagonalie(a, b);
 }
