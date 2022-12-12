@@ -38,6 +38,18 @@ addEventListener('click', (event) => {
     addPoint(x, y);
 })
 
+
+addEventListener('touchstart', (event) => {
+    let rect = canvas.getBoundingClientRect();
+    let x = event.clientX - rect.left;
+    let y = event.clientY - rect.top;
+    if(y < 0){
+        return;
+    }
+    poppedPoints = [];
+    addPoint(x, y);
+})
+
 // On Ctrl-z, undo; on ctrl-y, redo
 addEventListener('keydown', (event) => {
     if(event.ctrlKey && event.key == 'z') {
