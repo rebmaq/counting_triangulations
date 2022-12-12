@@ -1,5 +1,3 @@
-// import {Left, Intersect} from "primitives.js";
-
 let points = [];
 let poppedPoints = [];
 
@@ -136,12 +134,13 @@ function enumerateTriangulations(){
             for(; i < points.length + 2; i++){
                 let leftSet = getLeftSet(points[mod(i, points.length)], points[mod(i + 1, points.length)]);
                 if(leftSet.length == points.length - 2){
+                    points = points.reverse();
                     break;
                 }
             }
+            points = points.reverse();
         }
         alert(`There are ${triangulate(points[mod(i, points.length)], points[mod(i + 1, points.length)])} unique triangulations`);
-        points = points.reverse();
         return;
     }
     alert("Please enter a valid polygon");
